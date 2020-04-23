@@ -115,7 +115,7 @@ func MessageHandler(msg *textsecure.Message) {
 		}
 		//only send a notification, when it's not the current chat
 		// if session.ID != store.Sessions.GetActiveChat {
-		if true {
+		if s != store.ActiveSessionID {
 			if config.Gui == "ut" {
 				n := push.Nh.NewStandardPushMessage(
 					session.Name,
@@ -157,7 +157,7 @@ func ReceiptHandler(source string, devID uint32, timestamp uint64) {
 	for i := len(s.Messages) - 1; i >= 0; i-- {
 		m := s.Messages[i]
 		if m.SentAt == timestamp {
-			m.Receipt = true
+			m.IsRead = true
 			//qml.Changed(m, &m.IsRead)
 			store.UpdateMessageRead(m)
 			webserver.UpdateActiveChat()
@@ -176,11 +176,14 @@ func ReceiptMessageHandler(msg *textsecure.Message) {
 	for i := len(s.Messages) - 1; i >= 0; i-- {
 		m := s.Messages[i]
 		if m.SentAt == msg.Timestamp() {
-			m.Receipt = true
-			//qml.Changed(m, &m.IsRead)
-			store.UpdateMessageRead(m)
+			if m.Message == "readReceiptMessage" {
+				m.IsRead = true
+				store.UpdateMessageRead(m)
+			} else {
+				m.IsSent = true
+				store.UpdateMessageReceiptSent(m)
+			}
 			webserver.UpdateChatList()
-
 			return
 		}
 	}
